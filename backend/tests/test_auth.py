@@ -2,7 +2,7 @@ import json
 import httpx
 import asyncio
 
-BASE_URL = "http://localhost:8010/v1"
+BASE_URL = "http://localhost:8000/v1"
 
 async def test_auth():
     async with httpx.AsyncClient() as client:

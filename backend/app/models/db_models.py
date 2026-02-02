@@ -8,8 +8,10 @@ class APIKey(Base):
     __tablename__ = "api_keys"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=True)
     provider: Mapped[str] = mapped_column(String(50))
     key_value: Mapped[str] = mapped_column(String(255))
+    key_prefix: Mapped[str] = mapped_column(String(20), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     cooldown_until: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     daily_quota: Mapped[int] = mapped_column(default=0)  # 0 means unlimited

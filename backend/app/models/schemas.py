@@ -58,6 +58,7 @@ class UserOut(UserBase):
         from_attributes = True
 
 class APIKeyBase(BaseModel):
+    name: str = Field(..., min_length=1)
     provider: str
     daily_quota: Optional[int] = 0
 
@@ -66,6 +67,7 @@ class APIKeyCreate(APIKeyBase):
 
 class APIKeyOut(APIKeyBase):
     id: int
+    key_prefix: str = "sk-..."
     is_active: bool
     used_today: int
     cooldown_until: Optional[int] = None
