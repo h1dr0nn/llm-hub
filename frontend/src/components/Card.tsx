@@ -1,110 +1,84 @@
+"use client";
 import React from 'react';
+import { LucideIcon } from 'lucide-react';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 interface CardProps {
   title?: string;
+  subtitle?: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }
 
-export const Card = ({ title, icon, children, className = "" }: CardProps) => {
+export const Card = ({ title, subtitle, icon, children, className }: CardProps) => {
   return (
-    <div className={`card glass animate-fade-in ${className}`}>
+    <div className={cn("card glass animate-fade-in p-7", className)}>
       {(title || icon) && (
-        <div className="card-header">
-          {icon && <span className="card-icon">{icon}</span>}
-          {title && <h3 className="card-title">{title}</h3>}
+        <div className="card-header mb-6">
+          <div className="header-content flex items-center gap-4">
+            {icon && (
+              <div className="card-icon text-primary bg-primary-glow p-[0.6rem] rounded-xl flex shadow-[inset_0_0_10px_rgba(var(--primary-rgb),0.1)]">
+                {icon}
+              </div>
+            )}
+            <div>
+              {title && <h3 className="card-title text-[1.125rem] font-bold text-text-primary m-0">{title}</h3>}
+              {subtitle && <p className="card-subtitle text-[0.8125rem] text-text-secondary m-0 mt-[0.125rem]">{subtitle}</p>}
+            </div>
+          </div>
         </div>
       )}
-      <div className="card-content">
+      <div className="card-content h-full">
         {children}
       </div>
-
-      <style>{`
-        .card {
-          padding: 1.5rem;
-          border-radius: var(--radius-lg);
-          transition: var(--transition);
-        }
-        .card:hover {
-          transform: translateY(-2px);
-          border-color: rgba(255, 255, 255, 0.2);
-        }
-        .card-header {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          margin-bottom: 1.25rem;
-        }
-        .card-icon {
-          color: var(--primary);
-          background: var(--primary-glow);
-          padding: 0.5rem;
-          border-radius: var(--radius-md);
-          display: flex;
-        }
-        .card-title {
-          margin: 0;
-          font-size: 1.125rem;
-          color: var(--text-primary);
-        }
-        .card-content {
-          color: var(--text-secondary);
-        }
-      `}</style>
     </div>
   );
 };
 
-export const StatCard = ({ label, value, trend, icon }: { label: string, value: string | number, trend?: string, icon?: React.ReactNode }) => (
-  <Card>
-    <div className="stat-card">
-      <div className="stat-info">
-        <span className="stat-label">{label}</span>
-        <h2 className="stat-value">{value}</h2>
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  icon: LucideIcon;
+  trend?: {
+    value: string;
+    isUp: boolean;
+  };
+  color?: 'primary' | 'accent' | 'success' | 'warning';
+  className?: string;
+}
+
+export const StatCard = ({ label, value, icon: Icon, trend, color = 'primary', className }: StatCardProps) => {
+  return (
+    <div className={cn("card stat-card glass animate-fade-in flex justify-between items-center px-[1.75rem] py-[1.75rem]", className)}>
+      <div className="stat-main flex flex-col">
+        <span className="stat-label text-[0.875rem] font-semibold text-text-secondary mb-2 uppercase tracking-widest">{label}</span>
+        <h2 className="stat-value text-[2.25rem] font-extrabold m-0 text-text-primary tracking-tighter">{value}</h2>
         {trend && (
-          <div className="stat-trend success">
-            <span>{trend}</span>
+          <div className={cn(
+            "stat-trend text-[0.8125rem] mt-2 font-semibold flex items-center gap-1",
+            trend.isUp ? "text-success" : "text-danger"
+          )}>
+            <span>{trend.isUp ? '↑' : '↓'}</span>
+            <span>{trend.value}</span>
+            <span className="text-text-secondary opacity-60 ml-1">vs last month</span>
           </div>
         )}
       </div>
-      {icon && <div className="stat-icon-wrapper">{icon}</div>}
+      <div className={cn(
+        "stat-icon-glow p-4 rounded-xl flex relative",
+        color === 'primary' && "text-primary bg-primary-glow",
+        color === 'accent' && "text-accent bg-accent-glow",
+        color === 'success' && "text-success bg-success/10",
+        color === 'warning' && "text-warning bg-warning/10"
+      )}>
+        <Icon size={28} />
+      </div>
     </div>
-    <style>{`
-      .stat-card {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-      }
-      .stat-info {
-        display: flex;
-        flex-direction: column;
-      }
-      .stat-label {
-        font-size: 0.875rem;
-        color: var(--text-secondary);
-        margin-bottom: 0.5rem;
-      }
-      .stat-value {
-        font-size: 2rem;
-        font-weight: 700;
-        margin: 0;
-        color: var(--text-primary);
-      }
-      .stat-trend {
-        font-size: 0.75rem;
-        margin-top: 0.5rem;
-        font-weight: 600;
-      }
-      .stat-trend.success {
-        color: var(--success);
-      }
-      .stat-icon-wrapper {
-        color: var(--primary);
-        background: var(--primary-glow);
-        padding: 0.75rem;
-        border-radius: var(--radius-md);
-      }
-    `}</style>
-  </Card>
-);
+  );
+};
