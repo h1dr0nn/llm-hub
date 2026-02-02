@@ -56,3 +56,31 @@ class UserOut(UserBase):
 
     class Config:
         from_attributes = True
+
+class APIKeyBase(BaseModel):
+    provider: str
+    daily_quota: Optional[int] = 0
+
+class APIKeyCreate(APIKeyBase):
+    key_value: str
+
+class APIKeyOut(APIKeyBase):
+    id: int
+    is_active: bool
+    used_today: int
+    cooldown_until: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+class UsageLogOut(BaseModel):
+    id: int
+    api_key_id: int
+    timestamp: int
+    model: str
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+    class Config:
+        from_attributes = True

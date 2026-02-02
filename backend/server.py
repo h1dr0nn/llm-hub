@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from app.api.v1.chat import api_router
 from app.api.v1.auth import auth_router
@@ -22,6 +23,15 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="llm-hub", description="Central LLM API Gateway", lifespan=lifespan)
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify the actual frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Include API routes
 app.include_router(api_router, prefix="/v1")
