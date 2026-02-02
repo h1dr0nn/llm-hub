@@ -21,33 +21,33 @@ The roadmap is organized into phases, from core functionality to production read
 
 ### API & Routing
 
-- [ ] Initialize FastAPI project
-- [ ] Implement `/v1/chat` endpoint
-- [ ] Define unified request/response schema
-- [ ] Implement logical model abstraction (`smart`, `fast`, `cheap`, `any`)
-- [ ] Implement provider adapter interface
-- [ ] Add first provider adapter (OpenAI)
-- [ ] Add second provider adapter (Gemini or Claude)
+- [x] Initialize FastAPI project
+- [x] Implement `/v1/chat` endpoint
+- [x] Define unified request/response schema
+- [x] Implement logical model abstraction (`smart`, `fast`, `cheap`, `any`)
+- [x] Implement provider adapter interface
+- [x] Add first provider adapter (OpenAI)
+- [x] Add second provider adapter (Gemini or Claude)
 
 ### Routing Logic
 
-- [ ] Provider priority routing
-- [ ] API key rotation per provider
-- [ ] Basic fallback on failure
-- [ ] Handle retryable errors
-- [ ] Normalize provider responses
+- [x] Provider priority routing
+- [x] API key rotation per provider
+- [x] Basic fallback on failure
+- [x] Handle retryable errors
+- [x] Normalize provider responses
 
 ---
 
 ## 🧮 Phase 2 — Quota & Rate Management
 
-- [ ] Token usage tracking
-- [ ] Request count tracking
-- [ ] Per-key quota limits
-- [ ] Rate-limit detection (429 handling)
-- [ ] Cooldown mechanism for exhausted keys
-- [ ] Skip cooldown keys during routing
-- [ ] Persist usage data (SQLite)
+- [x] Token usage tracking
+- [x] Request count tracking
+- [x] Per-key quota limits
+- [x] Rate-limit detection (429 handling)
+- [x] Cooldown mechanism for exhausted keys
+- [x] Skip cooldown keys during routing
+- [x] Persist usage data (SQLite)
 
 ---
 

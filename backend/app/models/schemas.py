@@ -36,3 +36,23 @@ class ChatResponse(BaseModel):
     model: str
     choices: List[ChatChoice]
     usage: Usage
+
+class UserBase(BaseModel):
+    username: str
+    email: Optional[str] = None
+
+class UserRegister(UserBase):
+    password: str
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class UserOut(UserBase):
+    id: int
+    role: str
+    is_active: bool
+    created_at: int
+
+    class Config:
+        from_attributes = True

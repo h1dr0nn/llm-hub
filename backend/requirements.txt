@@ -3,3 +3,8 @@ uvicorn
 pydantic
 httpx
 python-dotenv
+sqlalchemy
+aiosqlite
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart

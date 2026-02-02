@@ -14,6 +14,6 @@ async def get_db():
         yield session
 
 async def init_db():
-    from app.models.db_models import APIKey, UsageLog
+    from app.models.db_models import APIKey, UsageLog, User
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

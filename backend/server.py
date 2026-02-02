@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from dotenv import load_dotenv
 from app.api.v1.chat import api_router
+from app.api.v1.auth import auth_router
+from app.api.v1.admin import admin_router
 from app.core.database import init_db
 
 # Load environment variables
@@ -23,6 +25,8 @@ app = FastAPI(title="llm-hub", description="Central LLM API Gateway", lifespan=l
 
 # Include API routes
 app.include_router(api_router, prefix="/v1")
+app.include_router(auth_router, prefix="/v1/auth", tags=["auth"])
+app.include_router(admin_router, prefix="/v1/admin", tags=["admin"])
 
 @app.get("/")
 async def root():

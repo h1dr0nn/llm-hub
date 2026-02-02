@@ -31,3 +31,15 @@ class UsageLog(Base):
 
     api_key: Mapped["APIKey"] = relationship(back_populates="usage_logs")
 
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    email: Mapped[Optional[str]] = mapped_column(String(100), unique=True, index=True, nullable=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    role: Mapped[str] = mapped_column(String(20), default="user")  # admin, user
+    is_active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[int] = mapped_column(default=lambda: int(time.time()))
+    last_login: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
