@@ -2,6 +2,7 @@ from app.adapters.openai import OpenAIAdapter
 
 class DeepSeekAdapter(OpenAIAdapter):
     BASE_URL = "https://api.deepseek.com/chat/completions"
+    MODELS_URL = "https://api.deepseek.com/models"
 
     def _map_model(self, logical_model: str) -> str:
         mapping = {

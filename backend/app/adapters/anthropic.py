@@ -45,6 +45,14 @@ class AnthropicAdapter(ProviderAdapter):
 
         return self._normalize_response(data, request.model)
 
+    async def list_models(self, api_key: str) -> List[str]:
+        # Anthropic doesn't have a simple public model list API that works with just a key easily
+        # but we can return the known models
+        return ["claude-3-5-sonnet-20240620", "claude-3-haiku-20240307", "claude-3-opus-20240229"]
+
+    async def get_quota_info(self, api_key: str) -> Dict[str, Any]:
+        return {"info": "Manual quota tracking recommended"}
+
     def _map_model(self, logical_model: str) -> str:
         mapping = {
             "smart": "claude-3-5-sonnet-20240620",

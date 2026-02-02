@@ -7,6 +7,12 @@ from app.adapters.gemini import GeminiAdapter
 from app.adapters.anthropic import AnthropicAdapter
 from app.adapters.deepseek import DeepSeekAdapter
 from app.adapters.groq import GroqAdapter
+from app.adapters.mistral import MistralAdapter
+from app.adapters.perplexity import PerplexityAdapter
+from app.adapters.together import TogetherAdapter
+from app.adapters.openrouter import OpenRouterAdapter
+from app.adapters.cohere import CohereAdapter
+from app.adapters.xai import XAIAdapter
 from app.models.schemas import ChatRequest, ChatResponse, LogicalModel
 from app.services.quota_service import quota_service
 
@@ -18,15 +24,21 @@ class RoutingEngine:
             "gemini": GeminiAdapter(),
             "anthropic": AnthropicAdapter(),
             "deepseek": DeepSeekAdapter(),
-            "groq": GroqAdapter()
+            "groq": GroqAdapter(),
+            "mistral": MistralAdapter(),
+            "perplexity": PerplexityAdapter(),
+            "together": TogetherAdapter(),
+            "openrouter": OpenRouterAdapter(),
+            "cohere": CohereAdapter(),
+            "xai": XAIAdapter()
         }
         
         # Mapping logical models to provider priority
         self.routing_config = {
-            LogicalModel.SMART: ["openai", "anthropic", "gemini"],
-            LogicalModel.FAST: ["groq", "openai", "gemini"],
-            LogicalModel.CHEAP: ["deepseek", "groq", "gemini"],
-            LogicalModel.ANY: ["openai", "gemini", "groq", "anthropic", "deepseek"]
+            LogicalModel.SMART: ["openai", "anthropic", "gemini", "mistral", "perplexity"],
+            LogicalModel.FAST: ["groq", "openai", "gemini", "mistral", "together"],
+            LogicalModel.CHEAP: ["deepseek", "groq", "gemini", "mistral", "together"],
+            LogicalModel.ANY: ["openai", "gemini", "groq", "anthropic", "deepseek", "mistral", "perplexity", "together", "openrouter", "cohere", "xai"]
         }
 
     async def route(self, db: AsyncSession, request: ChatRequest) -> ChatResponse:

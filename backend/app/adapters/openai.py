@@ -7,6 +7,7 @@ from app.models.schemas import ChatRequest, ChatResponse, ChatChoice, ChatMessag
 
 class OpenAIAdapter(ProviderAdapter):
     BASE_URL = "https://api.openai.com/v1/chat/completions"
+    MODELS_URL = "https://api.openai.com/v1/models"
 
     async def chat_completion(self, request: ChatRequest, api_key: str) -> ChatResponse:
         # Map logical model to specific OpenAI model if needed
@@ -32,6 +33,19 @@ class OpenAIAdapter(ProviderAdapter):
             data = response.json()
 
         return self._normalize_response(data, request.model)
+
+    async def list_models(self, api_key: str) -> List[str]:
+        headers = {"Authorization": f"Bearer {api_key}"}
+        async with httpx.AsyncClient() as client:
+            response = await client.get(self.MODELS_URL, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            return [m["id"] for m in data["data"]]
+
+    async def get_quota_info(self, api_key: str) -> Dict[str, Any]:
+        # OpenAI doesn't have a simple quota API for keys, 
+        # but we can return some info or just an empty dict
+        return {"total_granted": 0, "used": 0, "remaining": 0}
 
     def _map_model(self, logical_model: str) -> str:
         mapping = {

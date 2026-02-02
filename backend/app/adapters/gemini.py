@@ -37,6 +37,18 @@ class GeminiAdapter(ProviderAdapter):
 
         return self._normalize_response(data, request.model, gemini_model)
 
+    async def list_models(self, api_key: str) -> List[str]:
+        # Google AI Studio model list endpoint
+        url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            data = response.json()
+            return [m["name"].split("/")[-1] for m in data.get("models", []) if "gemini" in m["name"]]
+
+    async def get_quota_info(self, api_key: str) -> Dict[str, Any]:
+        return {"info": "Quota info not available via public API"}
+
     def _map_model(self, logical_model: str) -> str:
         mapping = {
             "smart": "gemini-1.5-pro",

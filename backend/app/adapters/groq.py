@@ -2,6 +2,7 @@ from app.adapters.openai import OpenAIAdapter
 
 class GroqAdapter(OpenAIAdapter):
     BASE_URL = "https://api.groq.com/openai/v1/chat/completions"
+    MODELS_URL = "https://api.groq.com/openai/v1/models"
 
     def _map_model(self, logical_model: str) -> str:
         mapping = {
