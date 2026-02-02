@@ -1,12 +1,14 @@
 import os
-import random
+import httpx
 from typing import List, Dict, Optional
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.adapters.openai import OpenAIAdapter
 from app.adapters.gemini import GeminiAdapter
 from app.adapters.anthropic import AnthropicAdapter
 from app.adapters.deepseek import DeepSeekAdapter
 from app.adapters.groq import GroqAdapter
 from app.models.schemas import ChatRequest, ChatResponse, LogicalModel
+from app.services.quota_service import quota_service
 
 class RoutingEngine:
     def __init__(self):
@@ -20,40 +22,32 @@ class RoutingEngine:
         }
         
         # Mapping logical models to provider priority
-        # Format: { logical_model: [list of (provider, api_key_env_var)] }
         self.routing_config = {
-            LogicalModel.SMART: [
-                ("openai", "OPENAI_API_KEY"),
-                ("anthropic", "ANTHROPIC_API_KEY"),
-                ("gemini", "GEMINI_API_KEY")
-            ],
-            LogicalModel.FAST: [
-                ("groq", "GROQ_API_KEY"),
-                ("openai", "OPENAI_API_KEY"),
-                ("gemini", "GEMINI_API_KEY")
-            ],
-            LogicalModel.CHEAP: [
-                ("deepseek", "DEEPSEEK_API_KEY"),
-                ("groq", "GROQ_API_KEY"),
-                ("gemini", "GEMINI_API_KEY")
-            ],
-            LogicalModel.ANY: [
-                ("openai", "OPENAI_API_KEY"),
-                ("gemini", "GEMINI_API_KEY"),
-                ("groq", "GROQ_API_KEY"),
-                ("anthropic", "ANTHROPIC_API_KEY"),
-                ("deepseek", "DEEPSEEK_API_KEY")
-            ]
+            LogicalModel.SMART: ["openai", "anthropic", "gemini"],
+            LogicalModel.FAST: ["groq", "openai", "gemini"],
+            LogicalModel.CHEAP: ["deepseek", "groq", "gemini"],
+            LogicalModel.ANY: ["openai", "gemini", "groq", "anthropic", "deepseek"]
         }
 
-    async def route(self, request: ChatRequest) -> ChatResponse:
+    async def route(self, db: AsyncSession, request: ChatRequest) -> ChatResponse:
         providers = self.routing_config.get(request.model, [])
         
         last_exception = None
-        for provider_name, key_env in providers:
-            api_key = os.getenv(key_env)
-            if not api_key:
-                continue
+        for provider_name in providers:
+            # Get an active key from the database for this provider
+            active_key = await quota_service.get_active_key(db, provider_name)
+            
+            if not active_key:
+                # Fallback to env var if no keys in DB yet (for backward compatibility/initial setup)
+                # In a full Phase 2 system, we would expect keys to be in DB.
+                env_key_name = f"{provider_name.upper()}_API_KEY"
+                api_key = os.getenv(env_key_name)
+                key_id = None
+                if not api_key:
+                    continue
+            else:
+                api_key = active_key.key_value
+                key_id = active_key.id
                 
             adapter = self.adapters.get(provider_name)
             if not adapter:
@@ -61,15 +55,35 @@ class RoutingEngine:
                 
             try:
                 print(f"Routing request for {request.model} to {provider_name}...")
-                return await adapter.chat_completion(request, api_key)
+                response = await adapter.chat_completion(request, api_key)
+                
+                # Log usage if we have a key_id (meaning it came from DB)
+                if key_id:
+                    await quota_service.log_usage(
+                        db, 
+                        key_id, 
+                        request.model, 
+                        response.usage.prompt_tokens, 
+                        response.usage.completion_tokens
+                    )
+                
+                return response
+            except httpx.HTTPStatusError as e:
+                # Detect rate limits
+                if e.response.status_code == 429 and key_id:
+                    print(f"Rate limit hit for {provider_name}, putting key on cooldown.")
+                    await quota_service.set_cooldown(db, key_id)
+                
+                print(f"HTTP Error with provider {provider_name}: {str(e)[:100]}")
+                last_exception = e
+                continue
             except Exception as e:
-                # Log error and try next provider
                 print(f"Error with provider {provider_name}: {str(e)[:100]}")
                 last_exception = e
                 continue
         
         if last_exception:
-            raise Exception(f"All providers failed. Last error from {provider_name}: {str(last_exception)}")
-        raise Exception(f"No providers with API keys available for model {request.model}")
+            raise Exception(f"All providers failed. Last error: {str(last_exception)}")
+        raise Exception(f"No providers available for model {request.model}")
 
 router = RoutingEngine()
