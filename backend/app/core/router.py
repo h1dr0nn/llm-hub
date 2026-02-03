@@ -15,6 +15,7 @@ from app.adapters.cohere import CohereAdapter
 from app.adapters.xai import XAIAdapter
 from app.models.schemas import ChatRequest, ChatResponse, LogicalModel
 from app.services.quota_service import quota_service
+from app.core.security import decrypt_value
 
 class RoutingEngine:
     def __init__(self):
@@ -58,7 +59,7 @@ class RoutingEngine:
                 if not api_key:
                     continue
             else:
-                api_key = active_key.key_value
+                api_key = decrypt_value(active_key.key_value)
                 key_id = active_key.id
                 
             adapter = self.adapters.get(provider_name)

@@ -69,7 +69,7 @@ async def create_key(key_in: APIKeyCreate, db: AsyncSession = Depends(get_db), a
     new_key = APIKey(
         name=key_in.name.strip() or "Unnamed Instance",
         provider=key_in.provider,
-        key_value=key_in.key_value,
+        key_value=encrypt_value(key_in.key_value),
         key_prefix=prefix,
         daily_quota=key_in.daily_quota,
         is_active=True
@@ -84,6 +84,95 @@ async def delete_key(key_id: int, db: AsyncSession = Depends(get_db), admin: Use
     await db.execute(delete(APIKey).where(APIKey.id == key_id))
     await db.commit()
     return {"status": "success", "message": "Key deleted"}
+
+from app.models.schemas import APIKeyUpdate
+
+@admin_router.patch("/keys/{key_id}", response_model=APIKeyOut)
+async def update_key(key_id: int, key_in: APIKeyUpdate, db: AsyncSession = Depends(get_db), admin: User = Depends(check_admin)):
+    result = await db.execute(select(APIKey).where(APIKey.id == key_id))
+    key = result.scalar_one_or_none()
+    if not key:
+        raise HTTPException(status_code=404, detail="Key not found")
+    
+    if key_in.name is not None:
+        key.name = key_in.name
+    if key_in.is_active is not None:
+        key.is_active = key_in.is_active
+    if key_in.daily_quota is not None:
+        key.daily_quota = key_in.daily_quota
+        
+    await db.commit()
+    await db.refresh(key)
+    return key
+
+@admin_router.get("/stats")
+async def get_stats(db: AsyncSession = Depends(get_db), admin: User = Depends(check_admin)):
+    """Aggregate stats for dashboard"""
+    # Total requests
+    result = await db.execute(select(UsageLog))
+    logs = result.scalars().all()
+    
+    total_requests = len(logs)
+    total_tokens = sum(log.total_tokens for log in logs)
+    
+    # Simple distribution
+    model_counts = {}
+    for log in logs:
+        m = log.model
+        model_counts[m] = model_counts.get(m, 0) + 1
+        
+    model_share = [
+        {"name": m, "value": count, "color": "#06b6d4"} # Color placeholder
+        for m, count in model_counts.items()
+    ]
+    
+    # Calculate percentage
+    total = sum(item["value"] for item in model_share)
+    if total > 0:
+        for item in model_share:
+            item["value"] = round((item["value"] / total) * 100, 1)
+            
+    # Time-series data (Last 24 hours, grouped by 4-hour blocks)
+    import time
+    now = int(time.time())
+    one_day_ago = now - 86400
+    
+    # Initialize buckets (6 buckets of 4 hours)
+    buckets = []
+    for i in range(6):
+        t = one_day_ago + (i * 14400)
+        # Format as HH:00
+        import datetime
+        dt = datetime.datetime.fromtimestamp(t)
+        buckets.append({
+            "name": dt.strftime("%H:00"),
+            "requests": 0,
+            "tokens": 0,
+            "start": t,
+            "end": t + 14400
+        })
+        
+    for log in logs:
+        if log.timestamp >= one_day_ago:
+            for b in buckets:
+                if b["start"] <= log.timestamp < b["end"]:
+                    b["requests"] += 1
+                    b["tokens"] += log.total_tokens
+                    break
+    
+    # Clean up buckets for response
+    usage_data = [
+        {"name": b["name"], "requests": b["requests"], "tokens": b["tokens"]}
+        for b in buckets
+    ]
+
+    return {
+        "total_requests": total_requests,
+        "total_tokens": total_tokens,
+        "avg_latency": "N/A", # Not tracked yet
+        "model_share": model_share,
+        "usage_data": usage_data
+    }
 
 @admin_router.get("/logs", response_model=List[UsageLogOut])
 async def list_logs(limit: int = 100, db: AsyncSession = Depends(get_db), admin: User = Depends(check_admin)):

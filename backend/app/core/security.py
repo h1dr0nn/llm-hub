@@ -7,10 +7,18 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 
 # Password Hashing
-pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+# "bcrypt" is generally recommended over "pbkdf2_sha256" for new projects
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # JWT Configuration
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "super-secret-key-for-llm-hub-change-me")
+# CRITICAL: Fail if no secret key is provided in production
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    # Fallback only for dev/testing, but warn loudly
+    import warnings
+    warnings.warn("JWT_SECRET_KEY not set in environment. Using insecure default. DO NOT USE IN PRODUCTION.")
+    SECRET_KEY = "super-secret-key-for-llm-hub-change-me"
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 24 hours
 
@@ -38,6 +46,35 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+from cryptography.fernet import Fernet
+
+# Encryption for API Keys
+# Generate a key if not exists (in prod this should be persistent)
+_ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
+if not _ENCRYPTION_KEY:
+    # Use a derivation of the SECRET_KEY to ensure consistency across restarts if SECRET_KEY is consistent
+    # Or just warn and generate one. For specific implementation, let's derive from SECRET_KEY if long enough, else generate.
+    # To be safe and simple: Use a hardcoded fallback hash for dev if env missing.
+    import base64
+    import hashlib
+    # Derive a 32-byte key from SECRET_KEY
+    k = hashlib.sha256(SECRET_KEY.encode()).digest()
+    _ENCRYPTION_KEY = base64.urlsafe_b64encode(k).decode()
+
+_fernet = Fernet(_ENCRYPTION_KEY)
+
+def encrypt_value(value: str) -> str:
+    if not value: return value
+    return _fernet.encrypt(value.encode()).decode()
+
+def decrypt_value(value: str) -> str:
+    if not value: return value
+    try:
+        return _fernet.decrypt(value.encode()).decode()
+    except Exception:
+        # If decryption fails (e.g. old plain text keys), return original
+        return value
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer

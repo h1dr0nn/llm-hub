@@ -1,7 +1,7 @@
 import time
 import uuid
 import httpx
-from typing import Dict, Any
+from typing import Dict, Any, List
 from app.adapters.base import ProviderAdapter
 from app.models.schemas import ChatRequest, ChatResponse, ChatChoice, ChatMessage, Usage
 

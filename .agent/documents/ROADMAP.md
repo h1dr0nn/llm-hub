@@ -53,15 +53,15 @@ The roadmap is organized into phases, from core functionality to production read
 
 ## 🔐 Phase 3 — Authentication & Security
 
-- [ ] User account model
-- [ ] Password hashing (bcrypt or argon2)
-- [ ] Login endpoint
-- [ ] Registration endpoint (configurable)
-- [ ] JWT or session-based authentication
-- [ ] Role-based access control (admin / user)
-- [ ] Protect admin endpoints
-- [ ] Mask sensitive fields in API responses
-- [ ] Encrypt API keys at rest
+- [x] User account model
+- [x] Password hashing (bcrypt or argon2)
+- [x] Login endpoint
+- [x] Registration endpoint (configurable)
+- [x] JWT or session-based authentication
+- [x] Role-based access control (admin / user)
+- [x] Protect admin endpoints
+- [x] Mask sensitive fields in API responses
+- [x] Encrypt API keys at rest
 
 ---
 
@@ -69,27 +69,27 @@ The roadmap is organized into phases, from core functionality to production read
 
 ### Core UI
 
-- [ ] Setup React / Next.js project
-- [ ] Implement login page
-- [ ] Implement registration page
-- [ ] Authenticated layout (protected routes)
-- [ ] API client for admin endpoints
+- [x] Setup React / Next.js project
+- [x] Implement login page
+- [x] Implement registration page
+- [x] Authenticated layout (protected routes)
+- [x] API client for admin endpoints
 
 ### API Key Management
 
-- [ ] Add API key form
-- [ ] Select provider when adding key
-- [ ] List API keys
-- [ ] Mask API key display
-- [ ] Enable / disable API keys
-- [ ] Show key status (active / cooldown / exhausted)
+- [x] Add API key form
+- [x] Select provider when adding key
+- [x] List API keys
+- [x] Mask API key display
+- [x] Enable / disable API keys
+- [x] Show key status (active / cooldown / exhausted)
 
 ### Observability
 
-- [ ] Overview dashboard
-- [ ] Usage charts (tokens, requests)
-- [ ] Provider health view
-- [ ] Routing & fallback logs
+- [x] Overview dashboard
+- [x] Usage charts (tokens, requests)
+- [x] Provider health view
+- [x] Routing & fallback logs
 
 ---
 

@@ -15,6 +15,7 @@ import {
   Database
 } from 'lucide-react';
 import { StatCard, Card } from '@/components/Card';
+import { useAuth } from '@/context/AuthContext';
 
 const usageData = [
   { name: '00:00', requests: 400, tokens: 2400 },
@@ -33,6 +34,49 @@ const modelShare = [
 ];
 
 export default function Dashboard() {
+  const { token } = useAuth();
+  const [stats, setStats] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/v1/admin/stats', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch stats", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (token) {
+      fetchStats();
+    }
+  }, [token]);
+
+  if (loading) {
+     return <div className="text-white p-10">Loading dashboard data...</div>;
+  }
+  
+  // Use real data or fallback to empty structure if new
+  const usageData = stats?.usage_data || [];
+  const modelShare = stats?.model_share || [];
+  const totalRequests = stats?.total_requests || 0;
+  // Format tokens to K/M
+  const totalTokens = stats?.total_tokens >= 1000000 
+    ? `${(stats?.total_tokens / 1000000).toFixed(1)}M`
+    : stats?.total_tokens >= 1000 
+      ? `${(stats?.total_tokens / 1000).toFixed(1)}K` 
+      : stats?.total_tokens || 0;
+
   return (
     <div className="space-y-8 animate-fade-in max-w-[1400px]">
       <header className="flex flex-col gap-1">
@@ -45,21 +89,21 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           label="Total Requests" 
-          value="1.2M" 
+          value={`${totalRequests}`}
           icon={Activity} 
           trend={{ value: '12%', isUp: true }}
           color="primary"
         />
         <StatCard 
           label="Avg Latency" 
-          value="450ms" 
+          value="-" 
           icon={Clock} 
-          trend={{ value: '5%', isUp: false }}
+          trend={{ value: '0%', isUp: false }}
           color="warning"
         />
         <StatCard 
-          label="Token Efficiency" 
-          value="98.2%" 
+          label="Total Tokens" 
+          value={`${totalTokens}`}
           icon={Zap} 
           trend={{ value: '2%', isUp: true }}
           color="success"
@@ -73,7 +117,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-10">
-        <Card title="Traffic Velocity" subtitle="Requests per hour" className="lg:col-span-8">
+        <Card title="Traffic Velocity" subtitle="Requests per 4h block (24h)" className="lg:col-span-8">
           <div className="h-[350px] w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={usageData}>
@@ -134,7 +178,7 @@ export default function Dashboard() {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {modelShare.map((entry, index) => (
+                  {modelShare.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                   ))}
                 </Pie>
@@ -149,7 +193,7 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
           <div className="space-y-3 mt-4">
-            {modelShare.map((item) => (
+            {modelShare.map((item: any) => (
               <div key={item.name} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
@@ -162,6 +206,7 @@ export default function Dashboard() {
         </Card>
 
         <Card title="System Resources" subtitle="Gateway load metrics" className="lg:col-span-12">
+          {/* ... existing static content for now ... */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-4">
             <div className="flex items-center gap-4 group">
               <div className="p-3 bg-white/5 rounded-xl text-primary border border-white/5 group-hover:border-primary/30 transition-all">

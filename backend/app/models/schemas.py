@@ -65,6 +65,11 @@ class APIKeyBase(BaseModel):
 class APIKeyCreate(APIKeyBase):
     key_value: str
 
+class APIKeyUpdate(BaseModel):
+    name: Optional[str] = None
+    is_active: Optional[bool] = None
+    daily_quota: Optional[int] = None
+
 class APIKeyOut(APIKeyBase):
     id: int
     key_prefix: str = "sk-..."

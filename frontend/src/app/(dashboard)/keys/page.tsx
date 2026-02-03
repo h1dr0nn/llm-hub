@@ -144,23 +144,51 @@ export default function KeysPage() {
       setKeys(mappedKeys);
     } catch (error) {
       console.error('Failed to fetch keys');
-      // Mock data if failed
-      setKeys([
-        { id: '1', name: 'Production GPT-4', provider: 'openai', key_prefix: 'sk-proj-...2x9a', status: 'active', usage: 1450.20, last_used: '2 mins ago' },
-        { id: '2', name: 'Claude Testing', provider: 'anthropic', key_prefix: 'sk-ant-...v1p4', status: 'active', usage: 230.50, last_used: '1 hour ago' },
-        { id: '3', name: 'Legacy Gemini', provider: 'google', key_prefix: 'AIza...f9s3', status: 'expired', usage: 0, last_used: '14 days ago' },
-      ]);
+      setKeys([]);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleUpdateKey = async () => {
+    if (!selectedKey) return;
+    try {
+      await axios.patch(`${config.API_URL}/admin/keys/${selectedKey.id}`, {
+        is_active: selectedKey.status === 'active',
+        // future: name, daily_quota
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchKeys();
+      setIsSettingsOpen(false);
+    } catch (error) {
+      console.error('Failed to update key');
+    }
+  };
+
+  // Helper to toggle status directly from internal state
+  const toggleKeyStatus = async (key: APIKey, newStatus: boolean) => {
+    try {
+      await axios.patch(`${config.API_URL}/admin/keys/${key.id}`, {
+        is_active: newStatus
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchKeys();
+      // Update selected key local state if open
+      if (selectedKey && selectedKey.id === key.id) {
+         setSelectedKey({...selectedKey, status: newStatus ? 'active' : 'revoked'});
+      }
+    } catch (error) {
+      console.error('Failed to toggle key status');
+    }
+  }
 
   const handleAddKey = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       // Map 'google' label to 'gemini' for backend if needed, 
       // but backend RoutingEngine already handles mapping or expects internal names.
-      // Looking at router.py, it uses 'gemini'.
       const payload = {
         name: newKey.name.trim() || 'My API Key',
         provider: newKey.provider,
@@ -204,10 +232,9 @@ export default function KeysPage() {
 
   const openSettings = (key: APIKey) => {
     setSelectedKey(key);
-    // In a real app, you'd load these from the key object
     setSecuritySettings({
-      autoRotate: true,
-      logFullRequests: false
+      autoRotate: true, // Mock
+      logFullRequests: false // Mock
     });
     setIsSettingsOpen(true);
   };
@@ -269,6 +296,7 @@ export default function KeysPage() {
               <tbody>
                 {filteredKeys.length > 0 ? filteredKeys.map((key) => (
                   <tr key={key.id} className="group border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                     {/* ... cols 1-3 ... */}
                     <td className="px-6 py-5">
                       <div className="flex flex-col">
                         <span className="font-bold text-white mb-1">{key.name}</span>
@@ -291,10 +319,9 @@ export default function KeysPage() {
                     </td>
                     <td className="px-6 py-5">
                       <div className={cn(
-                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide",
-                        key.status === 'active' ? "bg-success/10 text-success" : 
-                        key.status === 'expired' ? "bg-warning/10 text-warning" : "bg-danger/10 text-danger"
-                      )}>
+                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide cursor-pointer hover:opacity-80 transition-opacity",
+                        key.status === 'active' ? "bg-success/10 text-success" : "bg-danger/10 text-danger"
+                      )} onClick={() => toggleKeyStatus(key, key.status !== 'active')}>
                         {key.status === 'active' ? <CheckCircle size={10} /> : <AlertCircle size={10} />}
                         {key.status}
                       </div>
@@ -303,6 +330,7 @@ export default function KeysPage() {
                       <span className="text-sm text-text-secondary">{key.last_used}</span>
                     </td>
                     <td className="px-6 py-5 text-right">
+                      {/* ... actions ... */}
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => openSettings(key)}
@@ -332,14 +360,18 @@ export default function KeysPage() {
         </Card>
       </div>
 
+      {/* ... Add Key Modal ... */}
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         title="Add Provider Key"
         size="md"
       >
-        <form onSubmit={handleAddKey} className="space-y-6">
-          <div className="space-y-2">
+         {/* ... form ... */}
+         <form onSubmit={handleAddKey} className="space-y-6">
+             {/* ... form content ... */}
+             {/* ... Reusing existing form content lines 342-377 ... */}
+              <div className="space-y-2">
             <label className="text-sm font-bold text-text-secondary uppercase tracking-widest">Instance Label</label>
             <input 
               type="text" 
@@ -378,7 +410,7 @@ export default function KeysPage() {
           <div className="pt-4">
             <button type="submit" className="btn btn-primary w-full h-14 text-sm font-bold uppercase tracking-widest shadow-[0_4px_20px_rgba(6,182,212,0.3)]">Provision Key</button>
           </div>
-        </form>
+         </form>
       </Modal>
 
       <Modal
@@ -389,7 +421,8 @@ export default function KeysPage() {
       >
         <div className="space-y-6">
           <div className="p-4 bg-white/5 border border-white/5 rounded-[var(--radius-md)]">
-            <div className="flex items-center gap-3 text-primary mb-3">
+             {/* ... Key info ... */}
+             <div className="flex items-center gap-3 text-primary mb-3">
               <Shield size={20} />
               <span className="font-bold">Instance Info</span>
             </div>
@@ -409,15 +442,18 @@ export default function KeysPage() {
             <h4 className="text-xs font-bold uppercase tracking-widest text-text-secondary">Security Settings</h4>
             <div className="space-y-3">
               <Switch 
-                label="Auto-Rotate Key" 
-                checked={securitySettings.autoRotate} 
-                onChange={(val) => setSecuritySettings({...securitySettings, autoRotate: val})} 
+                label="Key Active Status" 
+                checked={selectedKey?.status === 'active'} 
+                onChange={(val) => toggleKeyStatus(selectedKey!, val)} 
               />
-              <Switch 
-                label="Log Full Requests" 
-                checked={securitySettings.logFullRequests} 
-                onChange={(val) => setSecuritySettings({...securitySettings, logFullRequests: val})} 
-              />
+               {/* Mock settings disabled visually or kept as future */}
+              <div className="opacity-50 pointer-events-none">
+                  <Switch 
+                    label="Auto-Rotate Key (Coming Soon)" 
+                    checked={securitySettings.autoRotate} 
+                    onChange={(val) => setSecuritySettings({...securitySettings, autoRotate: val})} 
+                  />
+              </div>
             </div>
           </div>
 
@@ -426,7 +462,7 @@ export default function KeysPage() {
               className="btn btn-primary w-full h-14 text-sm font-bold uppercase tracking-widest shadow-[0_4px_20px_rgba(6,182,212,0.3)]" 
               onClick={() => setIsSettingsOpen(false)}
             >
-              Save Changes
+              Close
             </button>
           </div>
         </div>
